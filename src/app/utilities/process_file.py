@@ -7,14 +7,17 @@ from src.helper.config import get_settings, Settings
 import string
 import random
 
+SRC_DIR_PATH = os.path.dirname(os.path.dirname(os.path.dirname(__file__))) 
+FILES_DIR_PATH = os.path.join(SRC_DIR_PATH, "data", "files")
+
 class FileProcessor:
     
     def __init__(self,file: UploadFile):
         self.file = file
         self.setttings: Settings = get_settings()
         self.file_extension = self.file.filename.split(".")[-1].lower()
-        self.src_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        self.files_dir = os.path.join(self.src_dir, "data", "files")
+        self.src_dir = SRC_DIR_PATH
+        self.files_dir = FILES_DIR_PATH
         os.makedirs(self.files_dir, exist_ok=True)
         
     def validate_uploaded_file(self) -> tuple[bool, str]:
@@ -55,6 +58,7 @@ class FileProcessor:
 
     
     async def save_uploaded_file(self, file_path: str) -> str:
+        """Saves the uploaded file to the specified file path asynchronously."""
         await self.file.seek(0)
         
         async with aiofiles.open(file_path, "wb") as f:
@@ -64,4 +68,16 @@ class FileProcessor:
         
         return file_path
     
+    @classmethod 
+    def is_file_exists(cls, file_id: str) -> bool:
+        """Checks if a file with the given file_id exists in the files directory."""
+        file_path = os.path.join(FILES_DIR_PATH, file_id)
+        return os.path.exists(file_path)
     
+    @classmethod
+    def return_metadatas_and_page_content(cls, documents: list) -> tuple[list[str], list[dict]]:
+        """Extracts page contents and metadatas from a list of documents."""
+        page_contents = [x.page_content for x in documents]
+        metadatas = [x.metadata for x in documents]
+        
+        return page_contents, metadatas

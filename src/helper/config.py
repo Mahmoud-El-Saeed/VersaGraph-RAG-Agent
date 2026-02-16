@@ -5,6 +5,8 @@ class Settings(BaseSettings):
     FILE_ALLOWED_TYPES: list[str]
     FILE_MAX_SIZE_MB: int
     FILE_UPLOAD_CHUNK_SIZE: int
+    CHUNK_SIZE: int
+    CHUNK_OVERLAP: int
     
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
