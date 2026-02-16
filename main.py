@@ -1,6 +1,7 @@
-def main():
-    print("Hello from versagraph-rag-agent!")
+from src.app.routes import data
+from fastapi import FastAPI
 
 
-if __name__ == "__main__":
-    main()
+app = FastAPI()
+
+app.include_router(data.router)
