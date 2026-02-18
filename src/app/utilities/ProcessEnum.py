@@ -9,3 +9,4 @@ class ProcessSignal(Enum):
     NO_FILE_FOUND = "The File Not Found"
     FILE_PROCESSING_SUCCESS = "File processed successfully."
     FILE_PROCESSING_FAILED = "File processing failed."
+    FILE_ALREADY_PROCESSED = "File has already been processed."
