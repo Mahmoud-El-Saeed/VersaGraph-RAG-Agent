@@ -27,6 +27,14 @@ class Settings(BaseSettings):
     MONGODB_PASSWORD: str
     MONGODB_DATABASE: str
     
+    
+    # LLM Config 
+    LLM_PROVIDER: str
+    LLM_MODEL: str
+    API_KEY_GROQ: str
+    API_URL_LLM: str # Use it if you want to run ollama
+    LLM_TEMPERATURE: float
+    
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 def get_settings():
