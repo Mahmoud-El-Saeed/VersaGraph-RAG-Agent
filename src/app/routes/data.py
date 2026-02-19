@@ -129,14 +129,12 @@ async def process_file(request: Request, process_request: ProcessRequest):
             {
                 "chat_id": chat_id,
                 "metadata": doc.metadata,
-                "chunk_content": doc.page_content
+                "chunk_content": doc.page_content,
+                "original_filename": file_doc.original_filename,
+                'page_number': doc.metadata.get('page', None)
             }
             for doc in chunked_documents
         ]
-        await qdrant_model.create_collection_if_not_exists(
-            collection_name=settings.COLLECTION_APP_NAME,
-            vector_size=settings.EMBED_MODEL_SIZE 
-        )
         await qdrant_model.upsert_points(
             collection_name=settings.COLLECTION_APP_NAME,
             vectors=embeddings,
