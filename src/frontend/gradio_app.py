@@ -5,7 +5,7 @@ import logging
 import os
 
 # System Configuration
-BACKEND_URL = os.environ.get("BACKEND_URL", "http://127.0.0.1:8000")
+BACKEND_URL = "http://127.0.0.1:8000"
 TIMEOUT = 300.0
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

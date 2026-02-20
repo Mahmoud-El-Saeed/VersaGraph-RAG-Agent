@@ -5,10 +5,7 @@ class Embeder:
     def __init__(self):
         settings: Settings = get_settings()
         self.model_name = settings.EMBEDDING_MODEL
-        embed_kwargs = {"model": self.model_name}
-        if settings.API_URL_LLM:
-            embed_kwargs["base_url"] = settings.API_URL_LLM
-        self.embeddings = OllamaEmbeddings(**embed_kwargs)
+        self.embeddings = OllamaEmbeddings(model=self.model_name)
         self.embed_size = settings.EMBED_MODEL_SIZE
     
     def embed_chunks(self, texts: list[str]) -> list[list[float]]:
