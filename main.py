@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from pymongo import AsyncMongoClient
 from contextlib import asynccontextmanager
 from qdrant_client import AsyncQdrantClient
-from src.app.routes import data
+from src.app.routes import data,chat
 from src.app.database.qdrantdb.QdrantdbModel import QdrantdbModel
 from src.helper.config import get_settings, Settings
 from src.app.routes.chat import register_chat_routes
@@ -32,3 +32,4 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 app.include_router(data.router)
+app.include_router(chat.router)

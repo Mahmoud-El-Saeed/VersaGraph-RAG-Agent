@@ -6,6 +6,7 @@ from src.app.chains.prompts import qa_prompt
 from src.app.chains.retriever import get_retriever_runnable
 from src.app.chains.memory_manager import MemoryManager
 from src.app.database.mongo_db import MessageModel
+# from IPython.display import Image, display
 
 
 async def get_memory_manager(mongo_client, qdrant_model):
@@ -81,5 +82,11 @@ def create_full_rag_chain(llm, mongo_client, qdrant_model):
         }
         | RunnableLambda(save_ai_output)
     )
-
+    # need to save chain workflow in png format 
+    # image_data = full_chain.get_graph().draw_mermaid_png()
+    # # save the image to a file
+    # with open("full_rag_chain.png", "wb") as f:
+    #     f.write(image_data)
+    # display(Image(image_data))
+    
     return full_chain
