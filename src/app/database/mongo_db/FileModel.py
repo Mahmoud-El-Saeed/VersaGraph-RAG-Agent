@@ -16,20 +16,20 @@ class FileModel(BaseDataModel):
         await instance.init_collection()
         return instance
     
-    async def insert_file(self, file: File):
+    async def insert_file(self, file: File) -> File:
         """Insert a new file document into the collection."""
         result = await self.collection.insert_one(file.model_dump(by_alias=True, exclude_unset=True))
         file.id = result.inserted_id
         return file
         
-    async def find_file_by_id(self, file_id):
+    async def find_file_by_id(self, file_id: str) -> File:
         """Find a file document by its ID."""
         file_data = await self.collection.find_one({"file_id": file_id})
         if file_data:
             return File(**file_data)
         return None
     
-    async def find_files_by_chat_id(self, chat_id):
+    async def find_files_by_chat_id(self, chat_id: str) -> list[File]:
         """Find all files associated with a chat ID."""
         cursor = self.collection.find({"chat_id": chat_id})
         
@@ -41,12 +41,12 @@ class FileModel(BaseDataModel):
         result = await self.collection.delete_one({"file_id": file_id})
         return result.deleted_count > 0
     
-    async def delete_files_by_chat_id(self, chat_id):
+    async def delete_files_by_chat_id(self, chat_id: str):
         """Delete all files associated with a chat ID."""
         result = await self.collection.delete_many({"chat_id": chat_id})
         return result.deleted_count
 
-    async def update_file_status_by_id(self, file_id, new_status):
+    async def update_file_status_by_id(self, file_id: str, new_status: str) -> bool:
         """Update the status of a file document by its ID."""
         result = await self.collection.update_one(
             {"file_id": file_id},
