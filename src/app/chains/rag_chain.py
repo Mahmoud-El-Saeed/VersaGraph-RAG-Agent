@@ -1,12 +1,19 @@
 from operator import itemgetter
-from langchain_core.runnables import RunnableLambda, RunnableParallel
+from langchain_core.runnables import RunnableLambda, RunnableParallel, RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.documents import Document
-from src.app.chains.prompts import qa_prompt
+from pydantic import BaseModel, Field
+from src.app.chains.prompts import qa_prompt , rephrase_prompt
 from src.app.chains.retriever import get_retriever_runnable
 from src.app.chains.memory_manager import MemoryManager
-from src.app.database.mongo_db import MessageModel
-# from IPython.display import Image, display
+from src.app.database.mongo_db import MessageModel, FileModel
+
+
+class ChainInput(BaseModel):
+    question: str
+    chat_id: str
+    persona: str = Field(default="expert assistant That Provides Detailed Answers")
+
 
 
 async def get_memory_manager(mongo_client, qdrant_model):
@@ -45,6 +52,12 @@ def create_full_rag_chain(llm, mongo_client, qdrant_model):
 
     retriever = get_retriever_runnable(qdrant_model)
 
+    async def fetch_file_names(inputs: dict) -> str:
+        chat_id = inputs["chat_id"]
+        file_model = await FileModel.create_instance(mongo_client)
+        files = await file_model.find_files_by_chat_id(chat_id)
+        return ", ".join([f.original_filename for f in files]) if files else "No files"
+    
     async def save_user_input(inputs: dict) -> dict:
         """Save user message to storage."""
         memory_manager = await get_memory_manager(mongo_client, qdrant_model)
@@ -62,31 +75,43 @@ def create_full_rag_chain(llm, mongo_client, qdrant_model):
         memory_manager = await get_memory_manager(mongo_client, qdrant_model)
         return await memory_manager.get_short_term_memory(inputs["chat_id"], limit=6)
 
-    # Parallel execution of retrieval, history fetching, and user message saving
-    input_prep = RunnableParallel(
-        # Pass the retriever output through our formatting function
-        context=retriever | RunnableLambda(format_docs_with_citations),
-        chat_history=RunnableLambda(fetch_chat_history),
-        _save_user=RunnableLambda(save_user_input),
-        question=itemgetter("question"),
-        chat_id=itemgetter("chat_id"),
-        persona=lambda x: x.get("persona", "helpful assistant"),
-    )
-
+    initial_prep = RunnableParallel({
+        "chat_history": RunnableLambda(fetch_chat_history),
+        "file_names": RunnableLambda(fetch_file_names),
+        "question": itemgetter("question"),
+        "chat_id": itemgetter("chat_id"),
+        "persona": lambda x: x.get("persona", "expert assistant That Provides Detailed Answers")
+    })
+    
+    rephrase_step = RunnableParallel({
+            "standalone_question": rephrase_prompt | llm | StrOutputParser(),
+            "original_inputs": RunnablePassthrough() 
+        })
+    retrieval_step = RunnableParallel({
+            "context": RunnableLambda(lambda x: {
+                "question": x["standalone_question"],
+                "chat_id": x["original_inputs"]["chat_id"]
+            }) | retriever | RunnableLambda(format_docs_with_citations),
+            "question": lambda x: x["original_inputs"]["question"],
+            "chat_history": lambda x: x["original_inputs"]["chat_history"],
+            "file_names": lambda x: x["original_inputs"]["file_names"],
+            "persona": lambda x: x["original_inputs"]["persona"],
+            "chat_id": lambda x: x["original_inputs"]["chat_id"],
+            "_save_user": RunnableLambda(lambda x: x["original_inputs"]) | RunnableLambda(save_user_input)
+        })
+    
+    response_generation = {
+        "answer": qa_prompt | llm | StrOutputParser(),
+        "chat_id": itemgetter("chat_id"),
+    }
+    
     # Assemble the complete chain
     full_chain = (
-        input_prep
-        | {
-            "answer": qa_prompt | llm | StrOutputParser(),
-            "chat_id": itemgetter("chat_id"),
-        }
+        initial_prep
+        | rephrase_step
+        | retrieval_step
+        | response_generation
         | RunnableLambda(save_ai_output)
-    )
-    # need to save chain workflow in png format 
-    # image_data = full_chain.get_graph().draw_mermaid_png()
-    # # save the image to a file
-    # with open("full_rag_chain.png", "wb") as f:
-    #     f.write(image_data)
-    # display(Image(image_data))
-    
+    ).with_types(input_type=ChainInput)
+
     return full_chain

@@ -22,7 +22,7 @@ class Retriever:
             collection_name=self.settings.COLLECTION_APP_NAME,
             query_vector=vector,
             chat_id=chat_id,
-            limit=4,
+            limit=10,
         )
         return [
             Document(
