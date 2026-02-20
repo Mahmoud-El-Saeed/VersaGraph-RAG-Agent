@@ -1,0 +1,16 @@
+FROM python:3.13-slim
+
+WORKDIR /app
+
+# Install uv for fast dependency management
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# Install frontend dependencies
+RUN uv pip install --system --no-cache gradio httpx
+
+# Copy frontend source
+COPY src/frontend/gradio_app.py .
+
+EXPOSE 7860
+
+CMD ["python", "gradio_app.py"]
