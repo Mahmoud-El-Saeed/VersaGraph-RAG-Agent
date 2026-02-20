@@ -68,43 +68,43 @@
 │                        CLIENT LAYER                                  │
 │                                                                      │
 │   ┌──────────────────┐    ┌──────────────────┐                       │
-│   │   Gradio Web UI   │    │ LangServe Client │                      │
-│   │   (Port 7860)     │    │  / REST Client   │                      │
+│   │   Gradio Web UI  │    │ LangServe Client │                       │
+│   │   (Port 7860)    │    │  / REST Client   │                       │
 │   └────────┬─────────┘    └────────┬─────────┘                       │
-│            └───────────┬───────────┘                                  │
+│            └───────────┬───────────┘                                 │
 └────────────────────────┼─────────────────────────────────────────────┘
                          │ HTTP
 ┌────────────────────────┼─────────────────────────────────────────────┐
-│                   APPLICATION LAYER (FastAPI - Port 8000)             │
+│                   APPLICATION LAYER (FastAPI - Port 8000)            │
 │                        │                                             │
-│   ┌────────────────────┴─────────────────────────┐                   │
-│   │              API Router                       │                   │
-│   │  ┌──────────────┐  ┌─────────────────────┐   │                   │
-│   │  │  /data/*      │  │  /chat/*             │   │                  │
-│   │  │  Upload &     │  │  Invoke, History,    │   │                  │
-│   │  │  Process      │  │  LangServe Playground│   │                  │
+│   ┌────────────────────┴──────────────────────────┐                  │
+│   │              API Router                       │                  │
+│   │  ┌──────────────┐  ┌──────────────────────┐   │                  │
+│   │  │  /data/*     │  │  /chat/*             │   │                  │
+│   │  │  Upload &    │  │  Invoke, History,    │   │                  │
+│   │  │  Process     │  │  LangServe Playground│   │                  │
 │   │  └──────┬───────┘  └──────────┬───────────┘   │                  │
 │   └─────────┼─────────────────────┼───────────────┘                  │
-│             │                     │                                   │
-│   ┌─────────┴─────────┐ ┌────────┴────────────────────┐             │
-│   │  File Processing   │ │     RAG Chain (LangChain)    │            │
-│   │  Pipeline          │ │                              │            │
-│   │                    │ │  ┌─────────┐  ┌───────────┐  │            │
-│   │  Loader → Splitter │ │  │Rephrase │→ │ Retriever │  │            │
-│   │  → Embedder →      │ │  │  Prompt │  │(Doc+Hist) │  │            │
-│   │  Vector Store      │ │  └─────────┘  └─────┬─────┘  │            │
-│   │                    │ │                      │        │            │
-│   └────────────────────┘ │  ┌───────────────────┴──────┐ │           │
-│                          │  │  QA Prompt + LLM → Answer │ │           │
-│                          │  │  (with Citations)         │ │           │
-│                          │  └───────────────────────────┘ │           │
-│                          └────────────────────────────────┘           │
+│             │                     │                                  │
+│   ┌─────────┴──────────┐ ┌────────┴───────────────────────┐          │
+│   │  File Processing   │ │     RAG Chain (LangChain)      │          │
+│   │  Pipeline          │ │                                │          │
+│   │                    │ │  ┌─────────┐   ┌───────────┐   │          │
+│   │  Loader → Splitter │ │  │Rephrase │→  │ Retriever │   │          │
+│   │  → Embedder →      │ │  │  Prompt │   │(Doc+Hist) │   │          │
+│   │  Vector Store      │ │  └─────────┘   └─────┬─────┘   │          │
+│   │                    │ │                      │         │          │
+│   └────────────────────┘ │  ┌───────────────────┴───────┐ │          │
+│                          │  │  QA Prompt + LLM → Answer │ │          │
+│                          │  │  (with Citations)         │ │          │
+│                          │  └───────────────────────────┘ │          │
+│                          └────────────────────────────────┘          │
 └──────────────────────────────────────────────────────────────────────┘
                          │                    │
 ┌────────────────────────┼────────────────────┼────────────────────────┐
-│                   DATA LAYER                 │                        │
+│                    DATA LAYER               │                        │
 │                        │                    │                        │
-│   ┌────────────────────┴───┐  ┌─────────────┴──────────┐            │
+│   ┌────────────────────┴───┐  ┌─────────────┴───────────┐            │
 │   │       MongoDB          │  │       Qdrant            │            │
 │   │   (Port 27017)         │  │   (Port 6333/6334)      │            │
 │   │                        │  │                         │            │
@@ -416,26 +416,26 @@ User Question
       │
       ▼
 ┌─────────────────────┐
-│ Fetch Chat History   │──→ MongoDB (last 6 messages)
-│ Fetch File Names     │──→ MongoDB (files in session)
+│ Fetch Chat History  │──> MongoDB (last 6 messages)
+│ Fetch File Names    │──> MongoDB (files in session)
 └──────────┬──────────┘
            ▼
 ┌─────────────────────┐
-│ Rephrase Question    │──→ LLM reformulates with context into standalone query
+│ Rephrase Question   │──> LLM reformulates with context into standalone query
 └──────────┬──────────┘
            ▼
 ┌─────────────────────┐
-│ Dual Retrieval       │
-│  • Document chunks   │──→ Qdrant (top 10 by similarity, filtered by chat_id)
-│  • History memories  │──→ Qdrant (top 2 from conversation history)
+│ Dual Retrieval      │
+│  • Document chunks  │──> Qdrant (top 10 by similarity, filtered by chat_id)
+│  • History memories │──> Qdrant (top 2 from conversation history)
 └──────────┬──────────┘
            ▼
 ┌─────────────────────┐
-│ Generate Answer      │──→ LLM produces cited response using retrieved context
+│ Generate Answer     │──> LLM produces cited response using retrieved context
 └──────────┬──────────┘
            ▼
 ┌─────────────────────┐
-│ Persist Turn         │──→ Save user msg + AI response to MongoDB & Qdrant
+│ Persist Turn        │──> Save user msg + AI response to MongoDB & Qdrant
 └─────────────────────┘
 ```
 
